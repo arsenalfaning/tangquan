@@ -10,6 +10,7 @@ import (
 	"io"
 	"bytes"
 	"github.com/tarm/goserial"
+	"sync"
 )
 
 type conf struct {
@@ -36,6 +37,7 @@ type request struct {
 	Code string `json:"code"`
 	Body []byte `json:"body"`
 }
+var mutex sync.Mutex
 
 func main() {
 	var conf conf
@@ -52,16 +54,19 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	for ;; {
 		req, err := ReadRequest(s)  //读取请求
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-		err = myHandler.Process(s, req) //发送请求并响应
-		if err != nil {
-			log.Println(err)
-		}
+		go func() {
+			err = myHandler.Process(s, req) //发送请求并响应
+			if err != nil {
+				log.Println(err)
+			}
+		}()
 	}
 
 }
@@ -105,6 +110,9 @@ func (h *MyHandler) Process(s io.ReadWriteCloser, request *request) error {
 	//开始写响应
 	buf := make([]byte, 512)
 	end := []byte("#end#")
+	mutex.Lock()
+	defer mutex.Unlock()
+	s.Write([]byte( request.Url + "\n"))
 	for {
 		n, e2 := resp.Body.Read(buf)
 		if e2 != nil {
