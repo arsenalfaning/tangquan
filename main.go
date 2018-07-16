@@ -79,14 +79,19 @@ func ReadRequest(s io.ReadWriteCloser) (*request, error)  {
 	end := []byte("#end#")
 	for ;; {
 		n, err := s.Read(buf)
-		if err != nil {
+		if err != nil && err != io.EOF {
 			log.Println(err)
 			return nil, err
 		}
-		data = append(data, buf[0:n])
+		if n > 0 {
+			tmp := make([]byte, n)
+			copy(tmp, buf[0:n])
+			data = append(data, tmp)
+		}
 		data1 := bytes.Join(data, []byte(""))
 		if bytes.HasSuffix(data1, end) { //判断是否请求读取结束
 			data2 := data1[0:len(data1)-len(end)]
+			fmt.Println(string( data2))
 			request := &request{}
 			err := json.Unmarshal(data2, request)
 			return request, err
@@ -100,7 +105,8 @@ func (h *MyHandler) Process(s io.ReadWriteCloser, request *request) error {
 	if e != nil {
 		return e
 	}
-	r.Header.Set("Authorization", request.Token + "\t" + request.Code) //
+	r.Header.Set("Authorization", request.Token)
+	r.Header.Set("X-Bank-Code", request.Code)
 	resp, e1 := http.DefaultClient.Do(r)
 	if e1 != nil {
 		return e1
@@ -111,7 +117,7 @@ func (h *MyHandler) Process(s io.ReadWriteCloser, request *request) error {
 	s.Write([]byte( request.Url + "\n"))
 	for {
 		n, e2 := resp.Body.Read(buf)
-		if e2 != nil {
+		if e2 != nil && e2 != io.EOF {
 			return e2
 		}
 		if n > 0 {
