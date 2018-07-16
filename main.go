@@ -1,15 +1,15 @@
 package main
 
 import (
-	"log"
-	"io/ioutil"
-	"gopkg.in/yaml.v2"
-	"fmt"
-	"net/http"
-	"encoding/json"
-	"io"
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"github.com/tarm/goserial"
+	"gopkg.in/yaml.v2"
+	"io"
+	"io/ioutil"
+	"log"
+	"net/http"
 )
 
 type conf struct {
@@ -30,11 +30,11 @@ func (c *conf) read() *conf {
 }
 
 type request struct {
-	Token string `json:"token"`
-	Url string `json:"url"`
+	Token  string `json:"token"`
+	Url    string `json:"url"`
 	Method string `json:"method"`
-	Code string `json:"code"`
-	Body []byte `json:"body"`
+	Code   string `json:"code"`
+	Body   []byte `json:"body"`
 }
 
 func main() {
@@ -53,8 +53,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	for ;; {
-		req, err := ReadRequest(s)  //读取请求
+	for {
+		req, err := ReadRequest(s) //读取请求
 		if err != nil {
 			log.Println(err)
 			continue
@@ -73,11 +73,11 @@ type MyHandler struct {
 	baseUrl string
 }
 
-func ReadRequest(s io.ReadWriteCloser) (*request, error)  {
+func ReadRequest(s io.ReadWriteCloser) (*request, error) {
 	data := make([][]byte, 0)
 	buf := make([]byte, 1024)
 	end := []byte("#end#")
-	for ;; {
+	for {
 		n, err := s.Read(buf)
 		if err != nil && err != io.EOF {
 			log.Println(err)
@@ -90,8 +90,8 @@ func ReadRequest(s io.ReadWriteCloser) (*request, error)  {
 		}
 		data1 := bytes.Join(data, []byte(""))
 		if bytes.HasSuffix(data1, end) { //判断是否请求读取结束
-			data2 := data1[0:len(data1)-len(end)]
-			fmt.Println(string( data2))
+			data2 := data1[0 : len(data1)-len(end)]
+			fmt.Println(string(data2))
 			request := &request{}
 			err := json.Unmarshal(data2, request)
 			return request, err
@@ -107,6 +107,7 @@ func (h *MyHandler) Process(s io.ReadWriteCloser, request *request) error {
 	}
 	r.Header.Set("Authorization", request.Token)
 	r.Header.Set("X-Bank-Code", request.Code)
+	r.Header.Set("Content-Type", "application/json;charset=UTF-8")
 	resp, e1 := http.DefaultClient.Do(r)
 	if e1 != nil {
 		return e1
@@ -114,7 +115,7 @@ func (h *MyHandler) Process(s io.ReadWriteCloser, request *request) error {
 	//开始写响应
 	buf := make([]byte, 512)
 	end := []byte("#end#")
-	s.Write([]byte( request.Url + "\n"))
+	s.Write([]byte(request.Url + "\n"))
 	for {
 		n, e2 := resp.Body.Read(buf)
 		if e2 != nil && e2 != io.EOF {
