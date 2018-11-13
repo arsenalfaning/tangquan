@@ -118,7 +118,7 @@ func (h *MyHandler) Process(s io.ReadWriteCloser, request *request) error {
 	buf := make([]byte, 1024)
 	end := []byte("#end#")
 	data := make([][]byte, 0)
-	data = append(data, []byte(request.Url + "\n"))
+	data = append(data, []byte(request.Url+"\n"))
 	for {
 		n, e2 := resp.Body.Read(buf)
 		if e2 != nil && e2 != io.EOF {
@@ -143,13 +143,13 @@ func (h *MyHandler) Process(s io.ReadWriteCloser, request *request) error {
 	dataByte := bytes.Join(data, make([]byte, 0))
 	fmt.Println(string(dataByte))
 
-	fmt.Println(time.Now())
+	//fmt.Println(time.Now())
 	index := 0
 	count := 0
 	delta := 1024
 	for {
 		index2 := index + delta
-		if len(dataByte) - count < delta {
+		if len(dataByte)-count < delta {
 			index2 = len(dataByte)
 		}
 		_, e3 := s.Write(dataByte[index:index2])
@@ -164,7 +164,7 @@ func (h *MyHandler) Process(s io.ReadWriteCloser, request *request) error {
 		}
 	}
 
-	fmt.Println(time.Now())
+	//fmt.Println(time.Now())
 
 	fmt.Println(len(dataByte))
 	return nil
